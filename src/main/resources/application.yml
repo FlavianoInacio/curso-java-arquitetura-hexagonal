@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: pedidos-hexagonal
+  datasource:
+    url: jdbc:h2:mem:pedidos
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
