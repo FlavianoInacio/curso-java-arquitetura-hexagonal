@@ -1,0 +1,49 @@
+# Build do Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse / STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+bin/
+
+# VS Code
+.vscode/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Logs e arquivos temporários
+*.log
+logs/
+*.tmp
+
+# Banco H2 em arquivo (se um dia usar)
+*.db
+*.mv.db
+*.trace.db
+
+# Variáveis de ambiente e segredos
+.env
+*.env
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
