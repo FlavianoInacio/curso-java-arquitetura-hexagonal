@@ -1,9 +1,11 @@
 package br.com.loja.pedidos.config;
 
 import br.com.loja.pedidos.application.port.in.BuscarPedidoUseCase;
+import br.com.loja.pedidos.application.port.in.CancelarPedidoUseCase;
 import br.com.loja.pedidos.application.port.in.CriarPedidoUseCase;
 import br.com.loja.pedidos.application.port.out.PedidoRepositoryPort;
 import br.com.loja.pedidos.application.service.BuscarPedidoService;
+import br.com.loja.pedidos.application.service.CancelarPedidoService;
 import br.com.loja.pedidos.application.service.CriarPedidoService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,4 +22,10 @@ public class UseCaseConfig {
     public BuscarPedidoUseCase buscarPedidoUseCase(PedidoRepositoryPort repository){
         return new BuscarPedidoService(repository);
     }
+
+    @Bean
+    public CancelarPedidoUseCase cancelarPedidoUseCase(PedidoRepositoryPort repository){
+        return new CancelarPedidoService(repository);
+    }
+
 }

@@ -1,7 +1,9 @@
 package br.com.loja.pedidos.adapter.in.web.dto;
 
 import br.com.loja.pedidos.application.port.in.BuscarPedidoUseCase;
+import br.com.loja.pedidos.application.port.in.CancelarPedidoUseCase;
 import br.com.loja.pedidos.application.port.in.CriarPedidoUseCase;
+import br.com.loja.pedidos.application.service.CancelarPedidoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,11 +16,14 @@ public class PedidoController {
 
     private final CriarPedidoUseCase criarPedido;
     private final BuscarPedidoUseCase buscarPedido;
+    private final CancelarPedidoUseCase cancelarPedido;
 
-
-    public PedidoController(CriarPedidoUseCase criarPedido, BuscarPedidoUseCase buscarPedido) {
+    public PedidoController(CriarPedidoUseCase criarPedido,
+                            BuscarPedidoUseCase buscarPedido,
+                            CancelarPedidoUseCase cancelarPedido) {
         this.criarPedido = criarPedido;
         this.buscarPedido = buscarPedido;
+        this.cancelarPedido = cancelarPedido;
     }
 
     @PostMapping
@@ -31,5 +36,10 @@ public class PedidoController {
     @GetMapping("/{id}")
     public PedidoResponse buscar(@PathVariable UUID id){
         return PedidoResponse.de(buscarPedido.executar(id));
+    }
+
+    @PatchMapping("/{id}/cancelamento")
+    public PedidoResponse cancelar(@PathVariable UUID id){
+        return PedidoResponse.de(cancelarPedido.executar(id));
     }
 }
