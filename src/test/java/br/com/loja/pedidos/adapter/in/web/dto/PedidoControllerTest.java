@@ -4,6 +4,8 @@ import br.com.loja.pedidos.application.port.in.BuscarPedidoUseCase;
 import br.com.loja.pedidos.application.port.in.CancelarPedidoUseCase;
 import br.com.loja.pedidos.application.port.in.CriarPedidoUseCase;
 import br.com.loja.pedidos.application.port.in.NovoPedidoCommand;
+import br.com.loja.pedidos.application.port.in.PagarPedidoUseCase;
+import br.com.loja.pedidos.domain.model.FormaPagamento;
 import br.com.loja.pedidos.domain.exception.PedidoInvalidoException;
 import br.com.loja.pedidos.domain.exception.PedidoNaoEncontradoException;
 import br.com.loja.pedidos.domain.model.ItemPedido;
@@ -44,6 +46,9 @@ class PedidoControllerTest {
 
     @MockitoBean
     private CancelarPedidoUseCase cancelarPedido;
+
+    @MockitoBean
+    private PagarPedidoUseCase pagarPedido;
 
     private Pedido pedidoDeExemplo() {
         return Pedido.criar("Maria", List.of(
@@ -127,5 +132,81 @@ class PedidoControllerTest {
         mockMvc.perform(patch("/pedidos/{id}/cancelamento", pedido.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELADO"));
+    }
+
+    @Test
+    @DisplayName("POST /pedidos/{id}/pagamento devolve 200 e o pedido pago")
+    void devePagarPedido() throws Exception {
+        Pedido pedido = pedidoDeExemplo();
+        pedido.pagar(FormaPagamento.PIX);
+        when(pagarPedido.executar(pedido.getId(), FormaPagamento.PIX)).thenReturn(pedido);
+
+        mockMvc.perform(post("/pedidos/{id}/pagamento", pedido.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "formaPagamento": "PIX" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PAGO"))
+                .andExpect(jsonPath("$.formaPagamento").value("PIX"))
+                .andExpect(jsonPath("$.pagoEm").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("POST /pedidos/{id}/pagamento devolve 400 quando a regra de negócio é violada")
+    void deveRetornar400QuandoPagamentoRecusado() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(pagarPedido.executar(id, FormaPagamento.PIX))
+                .thenThrow(new PedidoInvalidoException("O pedido já está pago"));
+
+        mockMvc.perform(post("/pedidos/{id}/pagamento", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"formaPagamento\": \"PIX\" }"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Pedido Inválido"))
+                .andExpect(jsonPath("$.detail").value("O pedido já está pago"));
+    }
+
+    @Test
+    @DisplayName("POST /pedidos/{id}/pagamento devolve 404 quando o pedido não existe")
+    void deveRetornar404AoPagarPedidoInexistente() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(pagarPedido.executar(id, FormaPagamento.PIX)).thenThrow(new PedidoNaoEncontradoException(id));
+
+        mockMvc.perform(post("/pedidos/{id}/pagamento", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"formaPagamento\": \"PIX\" }"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Pedido não encontrado!"));
+    }
+
+    @Test
+    @DisplayName("POST /pedidos/{id}/pagamento devolve 400 para forma de pagamento desconhecida")
+    void deveRetornar400ParaFormaDesconhecida() throws Exception {
+        mockMvc.perform(post("/pedidos/{id}/pagamento", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"formaPagamento\": \"DINHEIRO\" }"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Forma de pagamento inválida: DINHEIRO"));
+    }
+
+    @Test
+    @DisplayName("POST /pedidos/{id}/pagamento devolve 400 quando a forma de pagamento não é informada")
+    void deveRetornar400SemFormaPagamento() throws Exception {
+        mockMvc.perform(post("/pedidos/{id}/pagamento", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("A forma de pagamento é obrigatória"));
+    }
+
+    @Test
+    @DisplayName("POST /pedidos/{id}/pagamento devolve 400 quando não há corpo")
+    void deveRetornar400SemCorpo() throws Exception {
+        mockMvc.perform(post("/pedidos/{id}/pagamento", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Requisição inválida"))
+                .andExpect(jsonPath("$.detail").value("O corpo da requisição é inválido"));
     }
 }

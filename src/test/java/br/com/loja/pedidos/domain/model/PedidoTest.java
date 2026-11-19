@@ -5,8 +5,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,6 +101,106 @@ class PedidoTest {
             assertThatThrownBy(pedido::cancelar)
                     .isInstanceOf(PedidoInvalidoException.class)
                     .hasMessage("O pedido já está cancelado");
+        }
+
+        @Test
+        @DisplayName("não pode cancelar pedido pago")
+        void naoDeveCancelarPedidoPago() {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+            pedido.pagar(FormaPagamento.PIX);
+            Instant pagoEm = pedido.getPagoEm();
+
+            assertThatThrownBy(pedido::cancelar)
+                    .isInstanceOf(PedidoInvalidoException.class)
+                    .hasMessage("Não é possível cancelar um pedido pago");
+            assertThat(pedido.getStatus()).isEqualTo(StatusPedido.PAGO);
+            assertThat(pedido.getFormaPagamento()).isEqualTo(FormaPagamento.PIX);
+            assertThat(pedido.getPagoEm()).isEqualTo(pagoEm);
+        }
+    }
+
+    @Nested
+    @DisplayName("ao pagar")
+    class AoPagar {
+
+        @Test
+        @DisplayName("nasce sem forma nem data de pagamento")
+        void deveNascerSemPagamento() {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+
+            assertThat(pedido.getFormaPagamento()).isNull();
+            assertThat(pedido.getPagoEm()).isNull();
+        }
+
+        @Test
+        @DisplayName("muda o status para PAGO")
+        void deveMudarStatusParaPago() {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+
+            pedido.pagar(FormaPagamento.PIX);
+
+            assertThat(pedido.getStatus()).isEqualTo(StatusPedido.PAGO);
+        }
+
+        @ParameterizedTest(name = "com {0}")
+        @EnumSource(FormaPagamento.class)
+        @DisplayName("guarda a forma de pagamento")
+        void deveGuardarFormaPagamento(FormaPagamento forma) {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+
+            pedido.pagar(forma);
+
+            assertThat(pedido.getFormaPagamento()).isEqualTo(forma);
+        }
+
+        @Test
+        @DisplayName("registra a data do pagamento")
+        void deveRegistrarDataPagamento() {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+            Instant antes = Instant.now();
+
+            pedido.pagar(FormaPagamento.BOLETO);
+
+            assertThat(pedido.getPagoEm()).isBetween(antes, Instant.now());
+        }
+
+        @Test
+        @DisplayName("não pode pagar pedido cancelado")
+        void naoDevePagarPedidoCancelado() {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+            pedido.cancelar();
+
+            assertThatThrownBy(() -> pedido.pagar(FormaPagamento.PIX))
+                    .isInstanceOf(PedidoInvalidoException.class)
+                    .hasMessage("Não é possível pagar um pedido cancelado");
+            assertThat(pedido.getStatus()).isEqualTo(StatusPedido.CANCELADO);
+            assertThat(pedido.getFormaPagamento()).isNull();
+            assertThat(pedido.getPagoEm()).isNull();
+        }
+
+        @Test
+        @DisplayName("não pode ser pago duas vezes")
+        void naoDevePagarDuasVezes() {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+            pedido.pagar(FormaPagamento.PIX);
+            Instant pagoEmOriginal = pedido.getPagoEm();
+
+            assertThatThrownBy(() -> pedido.pagar(FormaPagamento.BOLETO))
+                    .isInstanceOf(PedidoInvalidoException.class)
+                    .hasMessage("O pedido já está pago");
+            assertThat(pedido.getFormaPagamento()).isEqualTo(FormaPagamento.PIX);
+            assertThat(pedido.getPagoEm()).isEqualTo(pagoEmOriginal);
+        }
+
+        @Test
+        @DisplayName("exige forma de pagamento")
+        void deveExigirFormaPagamento() {
+            Pedido pedido = Pedido.criar("Maria", List.of(teclado));
+
+            assertThatThrownBy(() -> pedido.pagar(null))
+                    .isInstanceOf(PedidoInvalidoException.class)
+                    .hasMessage("A forma de pagamento é obrigatória");
+            assertThat(pedido.getStatus()).isEqualTo(StatusPedido.CRIADO);
         }
     }
 }
