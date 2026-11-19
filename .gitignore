@@ -7,7 +7,8 @@ target/
 *.iml
 *.ipr
 *.iws
-out/
+# só a pasta de saída da raiz; sem a barra, "out/" ignorava também adapter/out/
+/out/
 
 # Eclipse / STS
 .apt_generated
@@ -47,3 +48,5 @@ logs/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+.claude/settings.local.json
