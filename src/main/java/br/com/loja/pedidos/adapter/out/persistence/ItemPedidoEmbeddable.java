@@ -1,4 +1,4 @@
-package br.com.loja.pedidos.application.port.out;
+package br.com.loja.pedidos.adapter.out.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
