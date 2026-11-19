@@ -1,6 +1,8 @@
 package br.com.loja.pedidos.application.service;
 
 import br.com.loja.pedidos.application.port.out.PedidoRepositoryPort;
+import br.com.loja.pedidos.domain.exception.PedidoInvalidoException;
+import br.com.loja.pedidos.domain.model.FormaPagamento;
 import br.com.loja.pedidos.domain.model.ItemPedido;
 import br.com.loja.pedidos.domain.model.Pedido;
 import br.com.loja.pedidos.domain.model.StatusPedido;
@@ -16,7 +18,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,5 +49,18 @@ class CancelarPedidoServiceTest {
 
         assertThat(cancelado.getStatus()).isEqualTo(StatusPedido.CANCELADO);
         verify(repository).salvar(pedido);
+    }
+
+    @Test
+    @DisplayName("não salva quando o pedido já está pago")
+    void naoDeveCancelarPedidoPago() {
+        Pedido pedido = novoPedido();
+        pedido.pagar(FormaPagamento.PIX);
+        when(repository.buscarPorId(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.executar(pedido.getId()))
+                .isInstanceOf(PedidoInvalidoException.class)
+                .hasMessage("Não é possível cancelar um pedido pago");
+        verify(repository, never()).salvar(any());
     }
 }
