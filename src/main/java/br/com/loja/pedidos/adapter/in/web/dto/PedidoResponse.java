@@ -13,7 +13,9 @@ public record PedidoResponse(
         String status,
         List<ItemResponse> itens,
         BigDecimal total,
-        Instant criadoEm) {
+        Instant criadoEm,
+        String formaPagamento,
+        Instant pagoEm) {
 
     public record ItemResponse(String produto, int quantidade,
                                BigDecimal precoUnitario, BigDecimal subtotal) {
@@ -29,6 +31,8 @@ public record PedidoResponse(
                 pedido.getStatus().name(),
                 itens,
                 pedido.total(),
-                pedido.getCriadoEm());
+                pedido.getCriadoEm(),
+                pedido.getFormaPagamento() == null ? null : pedido.getFormaPagamento().name(),
+                pedido.getPagoEm());
     }
 }

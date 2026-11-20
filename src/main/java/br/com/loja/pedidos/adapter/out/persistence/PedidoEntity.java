@@ -1,5 +1,6 @@
-package br.com.loja.pedidos.application.port.out;
+package br.com.loja.pedidos.adapter.out.persistence;
 
+import br.com.loja.pedidos.domain.model.FormaPagamento;
 import br.com.loja.pedidos.domain.model.StatusPedido;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -38,16 +39,26 @@ public class PedidoEntity {
     @CollectionTable(name = "pedido_itens", joinColumns = @JoinColumn(name = "pedido_id"))
     private List<ItemPedidoEmbeddable> itens = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "forma_pagamento")
+    private FormaPagamento formaPagamento;
+
+    @Column(name = "pago_em")
+    private Instant pagoEm;
+
     protected PedidoEntity() {
     }
 
     public PedidoEntity(UUID id, String cliente, StatusPedido status,
-                        Instant criadoEm, List<ItemPedidoEmbeddable> itens) {
+                        Instant criadoEm, List<ItemPedidoEmbeddable> itens,
+                        FormaPagamento formaPagamento, Instant pagoEm) {
         this.id = id;
         this.cliente = cliente;
         this.status = status;
         this.criadoEm = criadoEm;
         this.itens = new ArrayList<>(itens);
+        this.formaPagamento = formaPagamento;
+        this.pagoEm = pagoEm;
     }
 
     public UUID getId() {
@@ -68,5 +79,13 @@ public class PedidoEntity {
 
     public List<ItemPedidoEmbeddable> getItens() {
         return itens;
+    }
+
+    public FormaPagamento getFormaPagamento() {
+        return formaPagamento;
+    }
+
+    public Instant getPagoEm() {
+        return pagoEm;
     }
 }
