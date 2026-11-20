@@ -66,6 +66,9 @@ permanece inalterado.
    operação é recusada informando que o pedido não foi encontrado.
 4. **Given** um pedido com status CRIADO, **When** o cliente tenta pagá-lo sem informar a forma de
    pagamento ou com uma forma não aceita, **Then** o pagamento é recusado e o pedido continua CRIADO.
+5. **Given** um pedido CRIADO há mais de 7 dias, **When** o cliente tenta pagá-lo, **Then** o pagamento
+   é recusado como regra violada, com a mensagem "O prazo para pagamento deste pedido expirou", e o
+   pedido continua CRIADO.
 
 ---
 
@@ -119,6 +122,8 @@ permanece PAGO com forma e data do pagamento inalteradas.
 - **FR-011**: Todas as mensagens apresentadas ao cliente DEVEM estar em português.
 - **FR-012**: O sistema DEVE recusar o cancelamento de pedido com status PAGO, tratando como regra
   de negócio violada ("Não é possível cancelar um pedido pago"), sem alterar nenhum dado do pedido.
+- **FR-013**: O sistema DEVE recusar o pagamento de pedido criado há mais de 7 dias, tratando como
+    regra de negócio violada ("O prazo para pagamento deste pedido expirou"), sem alterar nenhum dado do pedido.
 
 ### Key Entities
 

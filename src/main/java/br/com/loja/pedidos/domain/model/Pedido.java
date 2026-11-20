@@ -3,12 +3,15 @@ package br.com.loja.pedidos.domain.model;
 import br.com.loja.pedidos.domain.exception.PedidoInvalidoException;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 public class Pedido {
+
+    private static final Duration PRAZO_PAGAMENTO = Duration.ofDays(7);
 
     private final UUID id;
     private final String cliente;
@@ -76,6 +79,9 @@ public class Pedido {
         }
         if (status == StatusPedido.PAGO) {
             throw new PedidoInvalidoException("O pedido já está pago");
+        }
+        if (criadoEm.isBefore(Instant.now().minus(PRAZO_PAGAMENTO))) {
+            throw new PedidoInvalidoException("O prazo para pagamento deste pedido expirou");
         }
         this.status = StatusPedido.PAGO;
         this.formaPagamento = forma;

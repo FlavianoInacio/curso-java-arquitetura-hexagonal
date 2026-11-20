@@ -10,7 +10,9 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -190,6 +192,31 @@ class PedidoTest {
                     .hasMessage("O pedido já está pago");
             assertThat(pedido.getFormaPagamento()).isEqualTo(FormaPagamento.PIX);
             assertThat(pedido.getPagoEm()).isEqualTo(pagoEmOriginal);
+        }
+
+        @Test
+        @DisplayName("não pode pagar pedido criado há mais de 7 dias")
+        void naoDevePagarPedidoExpirado() {
+            Pedido pedido = Pedido.reconstruir(UUID.randomUUID(), "Maria", List.of(teclado), StatusPedido.CRIADO,
+                    Instant.now().minus(8, ChronoUnit.DAYS), null, null);
+
+            assertThatThrownBy(() -> pedido.pagar(FormaPagamento.PIX))
+                    .isInstanceOf(PedidoInvalidoException.class)
+                    .hasMessage("O prazo para pagamento deste pedido expirou");
+            assertThat(pedido.getStatus()).isEqualTo(StatusPedido.CRIADO);
+            assertThat(pedido.getFormaPagamento()).isNull();
+            assertThat(pedido.getPagoEm()).isNull();
+        }
+
+        @Test
+        @DisplayName("paga pedido criado há menos de 7 dias")
+        void devePagarPedidoDentroDoPrazo() {
+            Pedido pedido = Pedido.reconstruir(UUID.randomUUID(), "Maria", List.of(teclado), StatusPedido.CRIADO,
+                    Instant.now().minus(6, ChronoUnit.DAYS), null, null);
+
+            pedido.pagar(FormaPagamento.PIX);
+
+            assertThat(pedido.getStatus()).isEqualTo(StatusPedido.PAGO);
         }
 
         @Test

@@ -1,5 +1,9 @@
 package br.com.loja.pedidos;
 
+import br.com.loja.pedidos.application.port.out.PedidoRepositoryPort;
+import br.com.loja.pedidos.domain.model.ItemPedido;
+import br.com.loja.pedidos.domain.model.Pedido;
+import br.com.loja.pedidos.domain.model.StatusPedido;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +14,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,6 +33,9 @@ class PedidoApiIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private PedidoRepositoryPort repository;
 
     @Test
     @DisplayName("cria, busca e cancela um pedido de verdade")
@@ -117,6 +128,23 @@ class PedidoApiIntegrationTest {
 
         pagar("/pedidos/" + UUID.randomUUID(), "PIX")
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("recusa pagamento de pedido com prazo expirado")
+    void deveRecusarPagamentoDePedidoExpirado() throws Exception {
+        Pedido antigo = Pedido.reconstruir(UUID.randomUUID(), "Maria",
+                List.of(new ItemPedido("Teclado", 1, new BigDecimal("150.00"))), StatusPedido.CRIADO,
+                Instant.now().minus(8, ChronoUnit.DAYS), null, null);
+        repository.salvar(antigo);
+        String location = "/pedidos/" + antigo.getId();
+
+        pagar(location, "PIX")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("O prazo para pagamento deste pedido expirou"));
+
+        mockMvc.perform(get(location))
+                .andExpect(jsonPath("$.status").value("CRIADO"));
     }
 
     @Test

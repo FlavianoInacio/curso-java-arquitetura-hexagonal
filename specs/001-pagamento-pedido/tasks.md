@@ -215,3 +215,12 @@ Task: "T012 POST /pedidos/{id}/pagamento no PedidoControllerTest"
 - Cada checkpoint exige `mvn test` verde (Constituição, Princípio III)
 - Verificar que os testes falham antes de implementar
 - Limitação conhecida: pagamentos simultâneos não são tratados (spec.md › Assumptions; research.md D6)
+
+## Phase 7: Convergence
+
+- [X] T039 [US2] Em `test/domain/model/PedidoTest.java`, no `@Nested` "ao pagar", escrever primeiro (devem falhar) os testes "não pode pagar pedido criado há mais de 7 dias", que monta o pedido com `Pedido.reconstruir(...)` e `criadoEm = Instant.now().minus(8, DAYS)`, espera `PedidoInvalidoException` "O prazo para pagamento deste pedido expirou" e verifica que o status continua CRIADO, com `formaPagamento` e `pagoEm` nulos; e "paga pedido criado há menos de 7 dias", com `criadoEm` 6 dias atrás, que passa a PAGO. Fonte: FR-013, US2/AC5 (missing)
+- [X] T040 [US2] Em `main/domain/model/Pedido.java`, fazer `pagar(...)` recusar, depois das verificações de CANCELADO e PAGO e antes de alterar o estado, pedido cujo `criadoEm` seja anterior a `Instant.now()` menos 7 dias, com `PedidoInvalidoException("O prazo para pagamento deste pedido expirou")`. Guardar o prazo numa constante do domínio (`Duration.ofDays(7)`). Faz T039 passar. Fonte: FR-013, FR-010 (missing)
+- [X] T041 [P] [US2] Em `test/application/service/PagarPedidoServiceTest.java`, adicionar: pedido expirado (via `Pedido.reconstruir` com `criadoEm` 8 dias atrás) propaga `PedidoInvalidoException` e `salvar` nunca é chamado. Fonte: FR-013, FR-010 (missing)
+- [X] T042 [US2] Em `test/PedidoApiIntegrationTest.java`, adicionar o teste "recusa pagamento de pedido com prazo expirado": salvar via `PedidoRepositoryPort` (injetado com `@Autowired`) um pedido reconstruído com `criadoEm` 8 dias atrás, chamar `POST /pedidos/{id}/pagamento` e esperar 400 com `$.detail` "O prazo para pagamento deste pedido expirou", e o `GET` deve continuar CRIADO. Fonte: US2/AC5 (missing)
+- [X] T043 [P] Atualizar `specs/001-pagamento-pedido/data-model.md` (regras de `Pedido.pagar`, incluindo o prazo de 7 dias depois de CANCELADO e PAGO) e `specs/001-pagamento-pedido/contracts/pagamento-api.md` (linha "Prazo expirado" na tabela de 400). Fonte: FR-013 (missing)
+- [X] T044 Rodar `mvn clean test`: verde, com os 69 testes existentes mais os novos. Fonte: Constituição III (missing)

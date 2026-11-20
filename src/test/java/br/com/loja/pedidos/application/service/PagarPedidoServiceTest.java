@@ -15,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,6 +66,20 @@ class PagarPedidoServiceTest {
 
         assertThatThrownBy(() -> service.executar(id, FormaPagamento.PIX))
                 .isInstanceOf(PedidoNaoEncontradoException.class);
+        verify(repository, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("não salva pedido com prazo de pagamento expirado")
+    void naoDeveSalvarPedidoExpirado() {
+        Pedido pedido = Pedido.reconstruir(UUID.randomUUID(), "Maria",
+                List.of(new ItemPedido("Teclado", 2, new BigDecimal("150.00"))), StatusPedido.CRIADO,
+                Instant.now().minus(8, ChronoUnit.DAYS), null, null);
+        when(repository.buscarPorId(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> service.executar(pedido.getId(), FormaPagamento.PIX))
+                .isInstanceOf(PedidoInvalidoException.class)
+                .hasMessage("O prazo para pagamento deste pedido expirou");
         verify(repository, never()).salvar(any());
     }
 

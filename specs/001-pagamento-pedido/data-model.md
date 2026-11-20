@@ -37,6 +37,8 @@ Enum com valores fechados:
   - `forma == null` → `PedidoInvalidoException("A forma de pagamento é obrigatória")`
   - `status == CANCELADO` → `PedidoInvalidoException("Não é possível pagar um pedido cancelado")`
   - `status == PAGO` → `PedidoInvalidoException("O pedido já está pago")`
+  - `criadoEm` há mais de 7 dias (constante `PRAZO_PAGAMENTO`) →
+    `PedidoInvalidoException("O prazo para pagamento deste pedido expirou")` (FR-013)
   - caso contrário: `status = PAGO`, `formaPagamento = forma`, `pagoEm = Instant.now()`
 - `cancelar()` (alterado):
   - `status == CANCELADO` → `PedidoInvalidoException("O pedido já está cancelado")` (inalterado)

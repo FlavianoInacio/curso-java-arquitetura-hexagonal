@@ -35,6 +35,7 @@ Paga o pedido `{id}` (UUID).
 |----------|----------|
 | Pedido CANCELADO | Não é possível pagar um pedido cancelado |
 | Pedido já PAGO | O pedido já está pago |
+| Prazo expirado (pedido CRIADO há mais de 7 dias) | O prazo para pagamento deste pedido expirou |
 | `formaPagamento` ausente/vazio | A forma de pagamento é obrigatória |
 | `formaPagamento` desconhecida | Forma de pagamento inválida: `<valor>` |
 
